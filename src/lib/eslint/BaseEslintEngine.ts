@@ -2,7 +2,7 @@ import {Logger, SfdxError} from '@salesforce/core';
 import {Catalog, ESRuleConfig, LooseObject, Rule, RuleGroup, RuleResult, RuleTarget, ESRule, TargetPattern} from '../../types';
 import {ENGINE} from '../../Constants';
 import {OutputProcessor} from '../pmd/OutputProcessor';
-import {RuleEngine} from '../services/RuleEngine';
+import {AbstractRuleEngine} from '../services/RuleEngine';
 import {Config} from '../util/Config';
 import {Controller} from '../../Controller';
 import {deepCopy} from '../../lib/util/Utils';
@@ -70,7 +70,7 @@ export interface EslintStrategy {
 	processRuleViolation(): ProcessRuleViolationType;
 }
 
-export abstract class BaseEslintEngine implements RuleEngine {
+export abstract class BaseEslintEngine extends AbstractRuleEngine {
 
 	private strategy: EslintStrategy;
 	protected logger: Logger;
