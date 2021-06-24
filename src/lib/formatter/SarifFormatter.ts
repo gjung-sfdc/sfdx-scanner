@@ -29,13 +29,15 @@ abstract class SarifFormatter {
 	 */
 	private readonly jsonTemplate: unknown;
 	protected readonly engine: string;
+	protected readonly normalizeSeverity: boolean;
 
-	constructor(engine: string, toolJson: unknown) {
+	constructor(engine: string, toolJson: unknown, normalizeSeverity: boolean) {
 		this.engine = engine;
 		this.jsonTemplate = deepCopy(toolJson);
 		this.jsonTemplate['results'] = [];
 		this.jsonTemplate['invocations'] = [];
 		this.ruleMap = new Map<string, number>();
+		this.normalizeSeverity = normalizeSeverity;
 	}
 
 	/**
@@ -71,6 +73,7 @@ abstract class SarifFormatter {
 				}
 				if (!this.ruleMap.has(v.ruleName)) {
 					const vRule: Rule = catalog.getRule(r.engine, v.ruleName);
+
 					// v.Rule may be undefined if there was an error
 					const description: string = vRule?.description ? vRule.description : v.message;
 					this.ruleMap.set(v.ruleName, this.ruleMap.size);
@@ -81,9 +84,10 @@ abstract class SarifFormatter {
 							text: description.trim().replace(/^\n/, '').replace(/\n$/, '')
 						},
 						properties: {
-							category: v.category,
-							severity: v.severity
-						}
+						category: v.category,
+						severity: v.severity,
+						normalizedSeverity: (this.normalizeSeverity ? v.normalizedSeverity : undefined)
+					}
 					};
 					if (v.url) {
 						rule['helpUri'] = v.url;
@@ -167,7 +171,7 @@ abstract class SarifFormatter {
  * The tool.driver.name will be the specific engine that ran.
  */
 class ESLintSarifFormatter extends SarifFormatter {
-	constructor(engine: string) {
+	constructor(engine: string, normalizeSeverity: boolean) {
 		super(engine,
 			{
 				tool: {
@@ -178,7 +182,8 @@ class ESLintSarifFormatter extends SarifFormatter {
 						rules: []
 					}
 				}
-			}
+			},
+			normalizeSeverity
 		);
 	}
 
@@ -191,7 +196,7 @@ class ESLintSarifFormatter extends SarifFormatter {
  * Generates a run object for all pmd based engines.
  */
 class PMDSarifFormatter extends SarifFormatter {
-	constructor(engine: string) {
+	constructor(engine: string, normalizeSeverity: boolean) {
 		super(engine,
 			{
 				tool: {
@@ -202,7 +207,8 @@ class PMDSarifFormatter extends SarifFormatter {
 						rules: []
 					}
 				}
-			}
+			},
+			normalizeSeverity
 		);
 	}
 
@@ -215,7 +221,7 @@ class PMDSarifFormatter extends SarifFormatter {
  * Generates a run object for retire-js
  */
 class RetireJsSarifFormatter extends SarifFormatter {
-	constructor(engine: string) {
+	constructor(engine: string, normalizeSeverity: boolean) {
 		super(engine,
 			{
 				tool: {
@@ -226,7 +232,8 @@ class RetireJsSarifFormatter extends SarifFormatter {
 						rules: []
 					}
 				}
-			}
+			},
+			normalizeSeverity
 		);
 	}
 
@@ -237,20 +244,20 @@ class RetireJsSarifFormatter extends SarifFormatter {
 	}
 }
 
-const getSarifFormatter = (engine: string): SarifFormatter => {
+const getSarifFormatter = (engine: string, normalizeSeverity: boolean): SarifFormatter => {
 	if (engine === ENGINE.ESLINT_CUSTOM) {
 		// Expose the eslint-custom engine as eslint, the users don't need to know it
 		// was the custom implementation
-		return new ESLintSarifFormatter(ENGINE.ESLINT);
+		return new ESLintSarifFormatter(ENGINE.ESLINT, normalizeSeverity);
 	} else if (engine.startsWith(ENGINE.ESLINT)) {
 		// All other eslint engines are exposed as-is
-		return new ESLintSarifFormatter(engine);
+		return new ESLintSarifFormatter(engine, normalizeSeverity);
 	} else if (engine.startsWith(ENGINE.PMD)) {
 		// Use the same formatter for pmd and pmd-custom, the users don't need to know it
 		// was the custom implementation
-		return new PMDSarifFormatter(ENGINE.PMD);
+		return new PMDSarifFormatter(ENGINE.PMD, normalizeSeverity);
 	} else if (engine === ENGINE.RETIRE_JS) {
-		return new RetireJsSarifFormatter(engine);
+		return new RetireJsSarifFormatter(engine, normalizeSeverity);
 	} else {
 		throw new Error(`Developer error. Unknown engine '${engine}'`);
 	}
@@ -260,7 +267,7 @@ const getSarifFormatter = (engine: string): SarifFormatter => {
  * Convert an array of RuleResults to a sarif document. The rules are separated by engine name.
  * A new "run" object is created for each engine that was run
  */
-const constructSarif = async (results: RuleResult[], executedEngines: Set<string>): Promise<string> => {
+const constructSarif = async (results: RuleResult[], executedEngines: Set<string>, normalizeSeverity: boolean): Promise<string> => {
 	// Obtain the catalog and pass it in, this avoids multiple initializations
 	// when waiting for promises in parallel
 	const catalog: RuleCatalog = await Controller.getCatalog();
@@ -284,7 +291,7 @@ const constructSarif = async (results: RuleResult[], executedEngines: Set<string
 
 	// Create a new run object for each engine/results pair
 	for (const [engine, ruleResults] of filteredResults.entries()) {
-		const formatter: SarifFormatter = getSarifFormatter(engine);
+		const formatter: SarifFormatter = getSarifFormatter(engine, normalizeSeverity);
 		sarif.runs.push(formatter.format(catalog, ruleResults));
 	}
 
