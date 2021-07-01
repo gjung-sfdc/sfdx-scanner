@@ -229,8 +229,11 @@ function validateJson(ruleResult: RuleResult, expectedResults: RuleResult[], exp
 	expect(ruleResult.fileName).to.equal(expectedRuleResult.fileName, 'Filename');
 	expect(ruleResult.engine).to.equal(expectedRuleResult.engine, 'Engine');
 	expect(violation.severity).to.equal(expectedViolation.severity, 'Severity');
-	if (normalizeSeverity) expect(violation.normalizedSeverity).to.equal(expectedViolation.normalizedSeverity, 'Normalized Severity');
-	else expect(violation.normalizedSeverity).to.equal(undefined);
+	if (normalizeSeverity) {
+		expect(violation.normalizedSeverity).to.equal(expectedViolation.normalizedSeverity, 'Normalized Severity');
+	} else {
+		expect(violation.normalizedSeverity).to.equal(undefined);
+	}
 	expect(violation.line).to.equal(expectedViolation.line, 'Line');
 	expect(violation.column).to.equal(expectedViolation.column, 'Column');
 	expect(violation.ruleName).to.equal(expectedViolation.ruleName, 'Rule Name');
@@ -299,7 +302,7 @@ describe('RuleResultRecombinator', () => {
 				const someFakeResults = [allFakeRuleResults[0]];
 
 				// Create our reformatted results.
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(someFakeResults, {format: OUTPUT_FORMAT.JUNIT, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(someFakeResults, OUTPUT_FORMAT.JUNIT, new Set(['eslint', 'pmd']));
 				// Split the results by newline character so we can make some interesting assertions.
 				if (!isString(results)) {
 					expect(false).to.equal(true, 'Results should have been string');
@@ -318,7 +321,7 @@ describe('RuleResultRecombinator', () => {
 				const someFakeResults = [allFakeRuleResults[1]];
 
 				// Create our reformatted results.
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(someFakeResults, {format: OUTPUT_FORMAT.JUNIT, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(someFakeResults, OUTPUT_FORMAT.JUNIT, new Set(['eslint', 'pmd']));
 				// Split the results by newline character so we can make some interesting assertions.
 				if (!isString(results)) {
 					expect(false).to.equal(true, 'Results should have been string');
@@ -334,7 +337,7 @@ describe('RuleResultRecombinator', () => {
 
 			it('Properly handles multiple files with multiple violations', async () => {
 				// Create our reformatted results from the entire sample.
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, {format: OUTPUT_FORMAT.JUNIT, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, OUTPUT_FORMAT.JUNIT, new Set(['eslint', 'pmd']));
 				// Split the results by newline character so we can make some interesting assertions.
 				if (!isString(results)) {
 					expect(false).to.equal(true, 'Results should have been string');
@@ -363,8 +366,11 @@ describe('RuleResultRecombinator', () => {
 				expect(rule.shortDescription.text).to.equal('disallow unused variables');
 				expect(rule.properties.category).to.equal('Variables');
 				expect(rule.properties.severity).to.equal(2);
-				if (normalizeSeverity) expect(rule.properties.normalizedSeverity).to.equal(1);
-				else expect(rule.properties.normalizedSeverity).to.equal(undefined);
+				if (normalizeSeverity) {
+					expect(rule.properties.normalizedSeverity).to.equal(1);
+				} else {
+					expect(rule.properties.normalizedSeverity).to.equal(undefined);
+				}
 				expect(rule.helpUri).to.equal('https://eslint.org/docs/rules/no-unused-vars');
 
 				// one of the violations has 'exception=2'. It will end up in the toolExecutionNotifications node
@@ -421,8 +427,11 @@ describe('RuleResultRecombinator', () => {
 				expect(rule.shortDescription.text).to.equal(`The second parameter of System.assert/third parameter of System.assertEquals/System.assertNotEquals is a message.\nHaving a second/third parameter provides more information and makes it easier to debug the test failure and\nimproves the readability of test output.`);
 				expect(rule.properties.category).to.equal('Best Practices');
 				expect(rule.properties.severity).to.equal(4);
-				if (normalizeSeverity) expect(rule.properties.normalizedSeverity).to.equal(3);
-				else expect(rule.properties.normalizedSeverity).to.equal(undefined);
+				if (normalizeSeverity) {
+					expect(rule.properties.normalizedSeverity).to.equal(3);
+				} else {
+					expect(rule.properties.normalizedSeverity).to.equal(undefined);
+				}
 				expect(rule.helpUri).to.equal('https://pmd.github.io/pmd-6.22.0/pmd_rules_java_bestpractices.html#apexassertionsshouldincludemessage');
 
 				rule = driver['rules'][1];
@@ -461,7 +470,7 @@ describe('RuleResultRecombinator', () => {
 			}
 
 			it ('Happy Path', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, {format: OUTPUT_FORMAT.SARIF, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, OUTPUT_FORMAT.SARIF, new Set(['eslint', 'pmd']));
 				const sarifResults: unknown[] = JSON.parse(results as string);
 				expect(sarifResults['runs']).to.have.lengthOf(2, 'Runs');
 				const runs = sarifResults['runs'];
@@ -485,7 +494,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Happy Path - normalized', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, {format: OUTPUT_FORMAT.SARIF, normalizeSeverity: true}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, OUTPUT_FORMAT.SARIF, new Set(['eslint', 'pmd']));
 				const sarifResults: unknown[] = JSON.parse(results as string);
 				expect(sarifResults['runs']).to.have.lengthOf(2, 'Runs');
 				const runs = sarifResults['runs'];
@@ -509,7 +518,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Run with no violations returns engines that were run', async () => {
-				const results = await (await RuleResultRecombinator.recombineAndReformatResults([], {format: OUTPUT_FORMAT.SARIF, normalizeSeverity: false}, new Set(['eslint', 'pmd']))).results;
+				const results = await (await RuleResultRecombinator.recombineAndReformatResults([], OUTPUT_FORMAT.SARIF, new Set(['eslint', 'pmd']))).results;
 				const sarifResults: unknown[] = JSON.parse(results as string);
 				expect(sarifResults['runs']).to.have.lengthOf(2, 'Runs');
 				const runs = sarifResults['runs'];
@@ -534,7 +543,7 @@ describe('RuleResultRecombinator', () => {
 		describe('Output Format: JSON', () => {
 			const messageIsTrimmed = false;
 			it ('Happy Path', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, {format: OUTPUT_FORMAT.JSON, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, OUTPUT_FORMAT.JSON, new Set(['eslint', 'pmd']));
 				const ruleResults: RuleResult[] = JSON.parse(results as string);
 				expect(ruleResults).to.have.lengthOf(3, 'Rule Results');
 
@@ -560,7 +569,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Happy Path - normalized', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, {format: OUTPUT_FORMAT.JSON, normalizeSeverity: true}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, OUTPUT_FORMAT.JSON, new Set(['eslint', 'pmd']));
 				const ruleResults: RuleResult[] = JSON.parse(results as string);
 				expect(ruleResults).to.have.lengthOf(3, 'Rule Results');
 
@@ -586,7 +595,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Edge Cases', async () => {
-				const results = await (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, {format: OUTPUT_FORMAT.JSON, normalizeSeverity: false}, new Set(['eslint']))).results;
+				const results = await (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, OUTPUT_FORMAT.JSON, new Set(['eslint']))).results;
 				const ruleResults: RuleResult[] = JSON.parse(results as string);
 				expect(ruleResults).to.have.lengthOf(1, 'Rule Results');
 
@@ -649,7 +658,7 @@ describe('RuleResultRecombinator', () => {
 			}
 
 			it ('Happy Path', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, {format: OUTPUT_FORMAT.XML, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, OUTPUT_FORMAT.XML, new Set(['eslint', 'pmd']));
 				const ruleResults: RuleResult[] = await convertXmlToJson(results as string, false);
 				expect(ruleResults).to.have.lengthOf(3, 'Rule Results');
 
@@ -675,7 +684,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Happy Path - normalized', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, {format: OUTPUT_FORMAT.XML, normalizeSeverity: true}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, OUTPUT_FORMAT.XML, new Set(['eslint', 'pmd']));
 				const ruleResults: RuleResult[] = await convertXmlToJson(results as string, true);
 				expect(ruleResults).to.have.lengthOf(3, 'Rule Results');
 
@@ -701,7 +710,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Edge Cases', async () => {
-				const results =  (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, {format: OUTPUT_FORMAT.XML, normalizeSeverity: false}, new Set(['eslint']))).results;
+				const results =  (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, OUTPUT_FORMAT.XML, new Set(['eslint']))).results;
 				const ruleResults: RuleResult[] = await convertXmlToJson(results as string, false);
 				expect(ruleResults).to.have.lengthOf(1, 'Rule Results');
 
@@ -756,7 +765,7 @@ describe('RuleResultRecombinator', () => {
 			}
 
 			it ('Happy Path', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, {format: OUTPUT_FORMAT.CSV, normalizeSeverity: false}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResults, OUTPUT_FORMAT.CSV, new Set(['eslint', 'pmd']));
 				const records = await new Promise((resolve, reject) => {
 					csvParse(results as string, (err, output) => {
 						if (err) {
@@ -796,7 +805,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Happy Path - normalized', async () => {
-				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, {format: OUTPUT_FORMAT.CSV, normalizeSeverity: true}, new Set(['eslint', 'pmd']));
+				const {minSev, results, summaryMap} = await RuleResultRecombinator.recombineAndReformatResults(allFakeRuleResultsNormalized, OUTPUT_FORMAT.CSV, new Set(['eslint', 'pmd']));
 				const records = await new Promise((resolve, reject) => {
 					csvParse(results as string, (err, output) => {
 						if (err) {
@@ -836,7 +845,7 @@ describe('RuleResultRecombinator', () => {
 			});
 
 			it ('Edge Cases', async () => {
-				const results = (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, {format: OUTPUT_FORMAT.CSV, normalizeSeverity: false}, new Set(['eslint']))).results;
+				const results = (await RuleResultRecombinator.recombineAndReformatResults(edgeCaseResults, OUTPUT_FORMAT.CSV, new Set(['eslint']))).results;
 				const records = await new Promise((resolve, reject) => {
 					csvParse(results as string, (err, output) => {
 						if (err) {

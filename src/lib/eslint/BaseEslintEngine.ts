@@ -1,6 +1,6 @@
 import {Logger, SfdxError} from '@salesforce/core';
 import {Catalog, ESRuleConfig, LooseObject, Rule, RuleGroup, RuleResult, RuleTarget, ESRule, TargetPattern} from '../../types';
-import {ENGINE} from '../../Constants';
+import {ENGINE, Severity} from '../../Constants';
 import {OutputProcessor} from '../pmd/OutputProcessor';
 import {AbstractRuleEngine} from '../services/RuleEngine';
 import {Config} from '../util/Config';
@@ -152,6 +152,8 @@ export abstract class BaseEslintEngine extends AbstractRuleEngine {
 		return Promise.resolve(this.catalog);
 	}
 
+
+
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	private processRule(key: string, docs: any): Rule {
 		// Massage eslint rule into Catalog rule format
@@ -249,6 +251,17 @@ export abstract class BaseEslintEngine extends AbstractRuleEngine {
 			return results;
 		} catch (e) {
 			throw new SfdxError(e.message || e);
+		}
+	}
+
+	getNormalizedSeverity(severity: number): Severity {
+		switch (severity) {
+			case 1: 
+				return Severity.MODERATE;
+			case 2: 
+				return Severity.HIGH;
+			default:
+				return Severity.MODERATE;
 		}
 	}
 

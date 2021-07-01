@@ -4,7 +4,7 @@ import {Controller} from '../../Controller';
 import {Catalog, Rule, RuleGroup, RuleResult, RuleTarget, TargetPattern} from '../../types';
 import {AbstractRuleEngine} from '../services/RuleEngine';
 import {Config} from '../util/Config';
-import {ENGINE, CUSTOM_CONFIG, EngineBase, HARDCODED_RULES} from '../../Constants';
+import {ENGINE, CUSTOM_CONFIG, EngineBase, HARDCODED_RULES, Severity} from '../../Constants';
 import {PmdCatalogWrapper} from './PmdCatalogWrapper';
 import PmdWrapper from './PmdWrapper';
 import {uxEvents} from "../ScannerEvents";
@@ -97,6 +97,21 @@ abstract class BasePmdEngine extends AbstractRuleEngine {
 	public abstract isEnabled(): Promise<boolean>;
 
 	public abstract isEngineRequested(filterValues: string[], engineOptions: Map<string, string>): boolean;
+
+	getNormalizedSeverity(severity: number): Severity {
+		switch (severity) {
+			case 1:
+				return Severity.HIGH;
+			case 2:
+				return Severity.MODERATE;
+			case 3: 
+			case 4:
+			case 5:
+				return Severity.LOW;
+			default:
+				return Severity.MODERATE;
+		}
+	}
 
 	public abstract getCatalog(): Promise<Catalog>;
 
